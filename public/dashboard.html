@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - BudgetWise</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Expense Dashboard</h2>
+    <button onclick="logout()">Logout</button>
+
+    <h3>Add / Edit Expense</h3>
+    <input type="hidden" id="editId">
+    <input type="date" id="date" required>
+    <input type="text" id="category" placeholder="Category" required>
+    <input type="number" id="amount" placeholder="Amount" required>
+    <button onclick="addOrUpdateExpense()">Save Expense</button>
+
+    <h3>Filters</h3>
+    <input type="date" id="filterDate" placeholder="Filter by Date">
+    <input type="text" id="filterCategory" placeholder="Filter by Category">
+    <button onclick="filterByDate()">Filter Date</button>
+    <button onclick="filterByCategory()">Filter Category</button>
+    <button onclick="loadExpenses()">Clear Filter</button>
+
+    <h3>All Expenses</h3>
+    <table id="expenseTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Amount</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h3 id="totalExpense">Total: $0</h3>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
