@@ -128,12 +128,12 @@ function renderExpenseTable(data) {
     const editBtn = document.createElement("button");
     editBtn.textContent = "Edit";
     editBtn.addEventListener("click", () => {
-      editExpense(expense.id, expense.date, expense.category, expense.amount);
+      editExpense(expense._id, expense.date, expense.category, expense.amount);
     });
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Delete";
-    deleteBtn.addEventListener("click", () => deleteExpense(expense.id));
+    deleteBtn.addEventListener("click", () => deleteExpense(expense._id));
 
     actionsTd.appendChild(editBtn);
     actionsTd.appendChild(deleteBtn);
@@ -177,9 +177,127 @@ async function filterByCategory() {
   renderExpenseTable(data);
 }
 
-// Load expenses on dashboard
+// --- INCOME FUNCTIONS ---
+async function addOrUpdateIncome() {
+  const id = document.getElementById("incomeEditId").value;
+  const date = document.getElementById("incomeDate").value;
+  const source = document.getElementById("incomeSource").value;
+  const amount = document.getElementById("incomeAmount").value;
+
+  if (!date || !source || !amount) return alert("Fill all fields");
+
+  const payload = { date, source, amount };
+
+  let res, data;
+
+  if (id) {
+    res = await fetch(`${API}/incomes/${id}`, {
+      method: "PUT",
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    data = await res.json();
+    if (res.ok) alert("Income updated!");
+    else alert("Error: " + data.message);
+  } else {
+    res = await fetch(`${API}/incomes`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    data = await res.json();
+    if (res.ok) alert("Income added!");
+    else alert("Error: " + data.message);
+  }
+
+  document.getElementById("incomeEditId").value = "";
+  document.getElementById("incomeDate").value = "";
+  document.getElementById("incomeSource").value = "";
+  document.getElementById("incomeAmount").value = "";
+
+  loadIncomes();
+}
+
+async function loadIncomes() {
+  const email = localStorage.getItem("currentUser");
+  if (!email) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  const res = await fetch(`${API}/incomes`, { headers: getHeaders() });
+  const data = await res.json();
+
+  renderIncomeTable(data);
+
+  const totalRes = await fetch(`${API}/incomes/total`, { headers: getHeaders() });
+  const totalData = await totalRes.json();
+  document.getElementById("totalIncome").textContent = `Total: $${totalData.totalIncome}`;
+}
+
+function renderIncomeTable(data) {
+  const tbody = document.querySelector("#incomeTable tbody");
+  tbody.innerHTML = ""; // clear existing rows
+
+  data.forEach(income => {
+    const tr = document.createElement("tr");
+
+    const dateTd = document.createElement("td");
+    dateTd.textContent = income.date;
+
+    const sourceTd = document.createElement("td");
+    sourceTd.textContent = income.source;
+
+    const amountTd = document.createElement("td");
+    amountTd.textContent = `$${income.amount}`;
+
+    const actionsTd = document.createElement("td");
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    // Use income._id instead of income.id
+    editBtn.addEventListener("click", () => {
+      editIncome(income._id, income.date, income.source, income.amount);
+    });
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Delete";
+    deleteBtn.addEventListener("click", () => deleteIncome(income._id));
+
+    actionsTd.appendChild(editBtn);
+    actionsTd.appendChild(deleteBtn);
+
+    tr.appendChild(dateTd);
+    tr.appendChild(sourceTd);
+    tr.appendChild(amountTd);
+    tr.appendChild(actionsTd);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function editIncome(id, date, source, amount) {
+  document.getElementById("incomeEditId").value = id;
+  document.getElementById("incomeDate").value = date;
+  document.getElementById("incomeSource").value = source;
+  document.getElementById("incomeAmount").value = amount;
+}
+
+async function deleteIncome(id) {
+  if (!confirm("Delete this income?")) return;
+  const res = await fetch(`${API}/incomes/${id}`, { method: "DELETE", headers: getHeaders() });
+  const data = await res.json();
+  if (res.ok) alert(data.message);
+  else alert("Error: " + data.message);
+  loadIncomes();
+}
+
+// Load expenses and incomes on dashboard
 if (window.location.pathname.endsWith("dashboard.html")) {
   const email = localStorage.getItem("currentUser");
   if (!email) window.location.href = "index.html";
-  else loadExpenses();
+  else {
+    loadExpenses();
+    loadIncomes();
+  }
 }
