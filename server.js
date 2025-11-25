@@ -43,6 +43,13 @@ const incomeSchema = new mongoose.Schema({
 });
 const Income = mongoose.model("Income", incomeSchema);
 
+// Budget schema
+const budgetSchema = new mongoose.Schema({
+  user: { type: String, required: true, unique: true },
+  amount: { type: Number, required: true }
+});
+const Budget = mongoose.model("Budget", budgetSchema);
+
 // Middleware to get current user from request headers
 async function authMiddleware(req, res, next) {
   const email = req.headers["x-user-email"];
@@ -136,6 +143,16 @@ app.get("/api/expenses/total", authMiddleware, async (req, res) => {
   res.json({ totalExpense: total });
 });
 
+// Spending by Category
+app.get("/api/expenses/by-category", authMiddleware, async (req, res) => {
+  const expenses = await Expense.find({ user: req.currentUser.email });
+  const categoryTotals = {};
+  expenses.forEach(e => {
+    categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
+  });
+  res.json(categoryTotals);
+});
+
 // Add Income
 app.post("/api/incomes", authMiddleware, async (req, res) => {
   const { date, source, amount } = req.body;
@@ -180,5 +197,78 @@ app.get("/api/incomes/total", authMiddleware, async (req, res) => {
   res.json({ totalIncome: total });
 });
 
+// Spending by Source
+app.get("/api/incomes/by-category", authMiddleware, async (req, res) => {
+  const incomes = await Income.find({ user: req.currentUser.email });
+  const sourceTotals = {};
+  incomes.forEach(i => {
+    sourceTotals[i.source] = (sourceTotals[i.source] || 0) + i.amount;
+  });
+  res.json(sourceTotals);
+});
+
+// Set or update budget
+app.post("/api/budget", authMiddleware, async (req, res) => {
+  const { amount } = req.body;
+  const budget = await Budget.findOneAndUpdate(
+    { user: req.currentUser.email },
+    { amount },
+    { upsert: true, new: true }
+  );
+  res.json({ message: "Budget set", budget });
+});
+
+// Get budget
+app.get("/api/budget", authMiddleware, async (req, res) => {
+  const budget = await Budget.findOne({ user: req.currentUser.email });
+  res.json(budget || { amount: 0 });
+});
+
+// Reset Expenses
+app.post("/api/expenses/reset", authMiddleware, async (req, res) => {
+  await Expense.deleteMany({ user: req.currentUser.email });
+  res.json({ message: "Expenses reset" });
+});
+
+// Reset Incomes
+app.post("/api/incomes/reset", authMiddleware, async (req, res) => {
+  await Income.deleteMany({ user: req.currentUser.email });
+  res.json({ message: "Incomes reset" });
+});
+
 // Start server
 app.listen(PORT, () => console.log(` Server running on http://localhost:${PORT}`));
+
+async function setBudget() {
+  const amount = document.getElementById("budgetAmount").value;
+  if (!amount || amount <= 0) return alert("Enter a valid budget amount");
+  const res = await fetch(`${API}/budget`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ amount })
+  });
+  const data = await res.json();
+  alert(data.message);
+  loadBudget();
+}
+
+async function loadBudget() {
+  const budgetRes = await fetch(`${API}/budget`, { headers: getHeaders() });
+  const budgetData = await budgetRes.json();
+  const budget = budgetData.amount || 0;
+
+  const expenseRes = await fetch(`${API}/expenses/total`, { headers: getHeaders() });
+  const expenseData = await expenseRes.json();
+  const totalExpense = expenseData.totalExpense || 0;
+
+  const remaining = budget - totalExpense;
+  const percent = budget > 0 ? Math.round((totalExpense / budget) * 100) : 0;
+
+  document.getElementById("budgetInfo").textContent =
+    `Budget: $${budget} | Spent: $${totalExpense} | Remaining: $${remaining < 0 ? 0 : remaining}`;
+
+  const progress = document.getElementById("budgetProgress");
+  progress.value = percent > 100 ? 100 : percent;
+  progress.max = 100;
+  document.getElementById("budgetPercent").textContent = ` ${percent}% used`;
+}

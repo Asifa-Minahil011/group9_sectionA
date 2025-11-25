@@ -108,16 +108,32 @@
       font-weight: bold;
       margin-top: 10px;
     }
+    .logout {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      border: none;
+      color: #fff;
+      width: auto;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    
   </style>
 </head>
 <body>
+  <button class="logout" onclick="logout()">Logout</button>
   <div class="container">
     <h2>BudgetWise Dashboard</h2>
-    <button onclick="logout()">Logout</button>
 
     <div class="tab-buttons">
       <button class="tab-btn active" onclick="showTab('expenseTab')">Expense Management</button>
       <button class="tab-btn" onclick="showTab('incomeTab')">Income Management</button>
+      <button class="tab-btn" onclick="showTab('budgetTab')">Budgeting</button>
+      <button class="tab-btn" onclick="showTab('reportsTab')">Reports / Summary</button>
     </div>
 
     <!-- Expense Tab -->
@@ -149,6 +165,9 @@
         <tbody></tbody>
       </table>
       <h2 class="total" id="totalExpense">Total Expenses: $0</h2>
+
+      <h3>Spending by Category</h3>
+      <canvas id="categoryChart" width="400" height="200"></canvas>
     </div>
 
     <!-- Income Tab -->
@@ -173,6 +192,38 @@
         <tbody></tbody>
       </table>
       <h2 class="total" id="totalIncome">Total Income: $0</h2>
+
+      <h3>Income by Source</h3>
+      <canvas id="incomeCategoryChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Budget Tab -->
+    <div id="budgetTab" class="tab-content">
+      <h3>Set Monthly Budget</h3>
+      <input type="number" id="budgetAmount" placeholder="Enter monthly budget" min="0">
+      <button onclick="setBudget()">Save Budget</button>
+      <h3>Remaining Budget</h3>
+      <div id="budgetInfo"></div>
+      <div style="margin-top:20px;">
+        <label class="budget-usage" for="budgetProgress">Budget Usage:</label>
+        <progress id="budgetProgress" value="0" max="100" style="width:100%;height:30px;"></progress>
+        <span id="budgetPercent"></span>
+      </div>
+    </div>
+
+    <!-- Reports / Summary Tab -->
+    <div id="reportsTab" class="tab-content">
+      <h3>Expense Pie Chart</h3>
+      <canvas id="expensePieChart" width="400" height="200"></canvas>
+
+      <h3>Monthly Trends Chart</h3>
+      <canvas id="monthlyTrendsChart" width="400" height="200"></canvas>
+
+      <h3>Highest Spending Category</h3>
+      <div id="highestCategory"></div>
+
+      <h3>Reset Data</h3>
+      <button onclick="resetData()">Reset All Data</button>
     </div>
   </div>
 
@@ -183,11 +234,16 @@
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       if(tabId === 'expenseTab') {
         document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-      } else {
+      } else if(tabId === 'incomeTab') {
         document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+      } else if(tabId === 'budgetTab') {
+        document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+      } else {
+        document.querySelector('.tab-btn:nth-child(4)').classList.add('active');
       }
     }
   </script>
   <script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
